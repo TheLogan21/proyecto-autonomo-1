@@ -18,11 +18,11 @@ func NewBookRepository(db *pgxpool.Pool) *BookRepository {
 
 func (r *BookRepository) Create(ctx context.Context, book *models.Book) error {
 	query := `
-		INSERT INTO books (title, author, published_year, isbn)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO books (title, author, published_year, isbn, price)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, created_at`
 
-	err := r.db.QueryRow(ctx, query, book.Title, book.Author, book.PublishedYear, book.ISBN).
+	err := r.db.QueryRow(ctx, query, book.Title, book.Author, book.PublishedYear, book.ISBN, book.Price).
 		Scan(&book.ID, &book.CreatedAt)
 	if err != nil {
 		return fmt.Errorf("error creating book: %w", err)
@@ -32,7 +32,7 @@ func (r *BookRepository) Create(ctx context.Context, book *models.Book) error {
 }
 
 func (r *BookRepository) GetAll(ctx context.Context) ([]models.Book, error) {
-	query := `SELECT id, title, author, published_year, isbn, created_at FROM books ORDER BY id DESC`
+	query := `SELECT id, title, author, published_year, isbn, price, created_at FROM books ORDER BY id DESC`
 	rows, err := r.db.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("error querying books: %w", err)
@@ -42,7 +42,7 @@ func (r *BookRepository) GetAll(ctx context.Context) ([]models.Book, error) {
 	var books []models.Book
 	for rows.Next() {
 		var b models.Book
-		if err := rows.Scan(&b.ID, &b.Title, &b.Author, &b.PublishedYear, &b.ISBN, &b.CreatedAt); err != nil {
+		if err := rows.Scan(&b.ID, &b.Title, &b.Author, &b.PublishedYear, &b.ISBN, &b.Price, &b.CreatedAt); err != nil {
 			return nil, fmt.Errorf("error scanning book: %w", err)
 		}
 		books = append(books, b)
@@ -53,4 +53,14 @@ func (r *BookRepository) GetAll(ctx context.Context) ([]models.Book, error) {
 	}
 
 	return books, nil
+}
+
+func (r *BookRepository) GetByID(ctx context.Context, id int) (*models.Book, error) {
+	query := `SELECT id, title, author, published_year, isbn, price, created_at FROM books WHERE id = $1`
+	var b models.Book
+	err := r.db.QueryRow(ctx, query, id).Scan(&b.ID, &b.Title, &b.Author, &b.PublishedYear, &b.ISBN, &b.Price, &b.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("error querying book by id: %w", err)
+	}
+	return &b, nil
 }

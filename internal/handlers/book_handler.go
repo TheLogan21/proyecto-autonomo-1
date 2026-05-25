@@ -1,9 +1,8 @@
 package handlers
 
 import (
-	"fmt"
-	"html/template"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"ebook-system/internal/models"
@@ -18,20 +17,8 @@ func NewBookHandler(service *services.BookService) *BookHandler {
 	return &BookHandler{service: service}
 }
 
-func (h *BookHandler) render(w http.ResponseWriter, page string, data interface{}) {
-	t, err := template.ParseFiles("ui/html/base.tmpl", fmt.Sprintf("ui/html/pages/%s.tmpl", page))
-	if err != nil {
-		http.Error(w, "Error parsing templates", http.StatusInternalServerError)
-		return
-	}
-	err = t.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		http.Error(w, "Error executing template", http.StatusInternalServerError)
-	}
-}
-
 func (h *BookHandler) Home(w http.ResponseWriter, r *http.Request) {
-	h.render(w, "home", nil)
+	render(w, r, "home", nil)
 }
 
 func (h *BookHandler) Catalog(w http.ResponseWriter, r *http.Request) {
@@ -40,32 +27,35 @@ func (h *BookHandler) Catalog(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error al obtener libros", http.StatusInternalServerError)
 		return
 	}
-	h.render(w, "catalog", books)
+	render(w, r, "catalog", books)
 }
 
 func (h *BookHandler) CreateBook(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+		http.Redirect(w, r, "/catalog?error="+url.QueryEscape("Método no permitido"), http.StatusSeeOther)
 		return
 	}
 
 	err := r.ParseForm()
 	if err != nil {
-		http.Error(w, "Datos inválidos", http.StatusBadRequest)
+		http.Redirect(w, r, "/catalog?error="+url.QueryEscape("Datos inválidos"), http.StatusSeeOther)
 		return
 	}
 
 	year, _ := strconv.Atoi(r.FormValue("published_year"))
+	price, _ := strconv.ParseFloat(r.FormValue("price"), 64)
+
 	book := &models.Book{
 		Title:         r.FormValue("title"),
 		Author:        r.FormValue("author"),
 		PublishedYear: year,
 		ISBN:          r.FormValue("isbn"),
+		Price:         price,
 	}
 
 	err = h.service.AddBook(r.Context(), book)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Redirect(w, r, "/catalog?error="+url.QueryEscape(err.Error()), http.StatusSeeOther)
 		return
 	}
 

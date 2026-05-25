@@ -4,8 +4,9 @@
         <h1 class="text-4xl font-extrabold tracking-tight">Catálogo de Libros</h1>
         <p class="text-sm opacity-70 mt-2">Explora y gestiona toda tu colección literaria.</p>
     </div>
-    <!-- Modal Toogle -->
+    {{if .UserID}}
     <label for="add-book-modal" class="btn btn-secondary shadow-lg hover:scale-105 transition-transform">+ Nuevo Libro</label>
+    {{end}}
 </div>
 
 <div class="bg-base-100 shadow-2xl rounded-box overflow-hidden border border-base-200">
@@ -13,24 +14,30 @@
     <table class="table table-zebra w-full">
       <thead class="bg-base-200 text-base-content text-sm">
         <tr>
-          <th class="w-16">ID</th>
           <th>Título</th>
           <th>Autor</th>
-          <th>Año</th>
-          <th>ISBN</th>
+          <th>Precio</th>
+          <th>Acción</th>
         </tr>
       </thead>
       <tbody>
-        {{range .}}
+        {{range .Data}}
         <tr class="hover">
-          <td class="font-mono text-xs opacity-50">{{.ID}}</td>
-          <td class="font-bold">{{.Title}}</td>
+          <td class="font-bold">{{.Title}}<br><span class="text-xs font-normal opacity-50">ISBN: {{.ISBN}} | Año: {{.PublishedYear}}</span></td>
           <td>{{.Author}}</td>
-          <td><div class="badge badge-outline">{{.PublishedYear}}</div></td>
-          <td class="font-mono text-sm">{{.ISBN}}</td>
+          <td><div class="badge badge-primary font-bold">${{.Price}}</div></td>
+          <td>
+              {{if $.UserID}}
+              <form action="/books/{{.ID}}/buy" method="POST">
+                  <button type="submit" class="btn btn-sm btn-accent">Comprar</button>
+              </form>
+              {{else}}
+              <a href="/login" class="btn btn-sm btn-outline">Ingresa para Comprar</a>
+              {{end}}
+          </td>
         </tr>
         {{else}}
-        <tr><td colspan="5" class="text-center py-10 opacity-50 italic">No hay libros registrados aún.</td></tr>
+        <tr><td colspan="4" class="text-center py-10 opacity-50 italic">No hay libros registrados aún.</td></tr>
         {{end}}
       </tbody>
     </table>
@@ -45,20 +52,24 @@
     <form action="/books" method="POST" class="space-y-4">
       <div class="form-control">
         <label class="label"><span class="label-text font-semibold">Título</span></label>
-        <input type="text" name="title" required class="input input-bordered input-primary w-full focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="Ej. El Señor de los Anillos" />
+        <input type="text" name="title" required class="input input-bordered input-primary w-full" placeholder="Ej. El Señor de los Anillos" />
       </div>
       <div class="form-control">
         <label class="label"><span class="label-text font-semibold">Autor</span></label>
-        <input type="text" name="author" required class="input input-bordered input-primary w-full focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="Ej. J.R.R. Tolkien" />
+        <input type="text" name="author" required class="input input-bordered input-primary w-full" placeholder="Ej. J.R.R. Tolkien" />
       </div>
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-3 gap-4">
           <div class="form-control">
             <label class="label"><span class="label-text font-semibold">Año</span></label>
-            <input type="number" name="published_year" required class="input input-bordered input-primary w-full focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="Ej. 1954" />
+            <input type="number" name="published_year" required class="input input-bordered input-primary w-full" placeholder="Ej. 1954" />
           </div>
           <div class="form-control">
             <label class="label"><span class="label-text font-semibold">ISBN</span></label>
-            <input type="text" name="isbn" required class="input input-bordered input-primary w-full focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="ISBN-13" />
+            <input type="text" name="isbn" required class="input input-bordered input-primary w-full" placeholder="ISBN-13" />
+          </div>
+          <div class="form-control">
+            <label class="label"><span class="label-text font-semibold">Precio</span></label>
+            <input type="number" step="0.01" min="0" name="price" required class="input input-bordered input-primary w-full" placeholder="0.00" />
           </div>
       </div>
       <div class="modal-action mt-6">

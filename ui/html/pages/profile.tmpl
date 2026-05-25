@@ -1,0 +1,49 @@
+{{define "main"}}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Sidebar: Datos y Saldo -->
+    <div class="col-span-1 space-y-6">
+        <div class="card bg-base-100 shadow-xl border border-primary/20">
+            <div class="card-body text-center">
+                <h2 class="text-2xl font-bold">{{.Data.User.Username}}</h2>
+                <p class="text-sm opacity-70">{{.Data.User.Email}}</p>
+                <div class="divider"></div>
+                <div class="stat p-0">
+                    <div class="stat-title">Saldo Disponible</div>
+                    <div class="stat-value text-primary">${{.Data.User.Balance}}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h3 class="card-title text-lg">Cargar Saldo</h3>
+                <form action="/profile/balance" method="POST" class="flex items-center gap-2 mt-2">
+                    <input type="number" step="0.01" min="1" name="amount" required class="input input-bordered w-full" placeholder="Monto" />
+                    <button type="submit" class="btn btn-secondary">Cargar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content: Libros Comprados -->
+    <div class="col-span-2">
+        <h2 class="text-3xl font-bold mb-4">Tus Libros</h2>
+        <div class="grid grid-cols-1 gap-4">
+            {{range .Data.Purchases}}
+            <div class="card bg-base-100 shadow-lg flex-row items-center p-4">
+                <div class="flex-1">
+                    <h3 class="font-bold text-xl">{{.Book.Title}}</h3>
+                    <p class="text-sm opacity-70">{{.Book.Author}}</p>
+                    <div class="text-xs mt-2">Descargas: <span class="badge badge-sm">{{.DownloadCount}}</span></div>
+                </div>
+                <div class="flex-none">
+                    <a href="/books/{{.Book.ID}}/download" class="btn btn-primary btn-sm" target="_blank">Descargar</a>
+                </div>
+            </div>
+            {{else}}
+            <div class="alert alert-info">Aún no has comprado ningún libro. <a href="/catalog" class="link ml-2">Ir al catálogo</a></div>
+            {{end}}
+        </div>
+    </div>
+</div>
+{{end}}

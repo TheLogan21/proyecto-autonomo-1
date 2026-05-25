@@ -13,12 +13,12 @@ import (
 	"github.com/joho/godotenv"
 
 	"ebook-system/internal/handlers"
+	localMiddleware "ebook-system/internal/middleware"
 	"ebook-system/internal/repository"
 	"ebook-system/internal/services"
 )
 
 func main() {
-	// Cargar variables de entorno
 	if err := godotenv.Load(); err != nil {
 		log.Println("No se encontró archivo .env, usando variables de sistema")
 	}
@@ -42,17 +42,41 @@ func main() {
 	log.Println("Conexión exitosa a la base de datos")
 
 	bookRepo := repository.NewBookRepository(dbPool)
-	bookService := services.NewBookService(bookRepo)
-	bookHandler := handlers.NewBookHandler(bookService)
+	userRepo := repository.NewUserRepository(dbPool)
+	purchaseRepo := repository.NewPurchaseRepository(dbPool)
 
-	// Inicializar enrutador chi
+	bookService := services.NewBookService(bookRepo)
+	userService := services.NewUserService(userRepo)
+	purchaseService := services.NewPurchaseService(purchaseRepo, userRepo, bookRepo)
+
+	bookHandler := handlers.NewBookHandler(bookService)
+	authHandler := handlers.NewAuthHandler(userService)
+	userHandler := handlers.NewUserHandler(userService, purchaseService)
+	purchaseHandler := handlers.NewPurchaseHandler(purchaseService)
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(localMiddleware.AuthMiddleware)
 
 	r.Get("/", bookHandler.Home)
 	r.Get("/catalog", bookHandler.Catalog)
-	r.Post("/books", bookHandler.CreateBook)
+
+	r.Get("/login", authHandler.LoginView)
+	r.Post("/login", authHandler.LoginPost)
+	r.Get("/register", authHandler.RegisterView)
+	r.Post("/register", authHandler.RegisterPost)
+	r.Post("/logout", authHandler.Logout)
+
+	r.Group(func(r chi.Router) {
+		r.Use(localMiddleware.RequireAuth)
+
+		r.Post("/books", bookHandler.CreateBook)
+		r.Get("/profile", userHandler.Profile)
+		r.Post("/profile/balance", userHandler.AddBalance)
+		r.Post("/books/{id}/buy", purchaseHandler.BuyBook)
+		r.Get("/books/{id}/download", purchaseHandler.DownloadBook)
+	})
 
 	addr := fmt.Sprintf(":%s", port)
 	log.Printf("Servidor escuchando en http://localhost%s", addr)

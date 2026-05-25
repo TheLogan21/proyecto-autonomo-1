@@ -1,0 +1,26 @@
+{{define "main"}}
+<div class="max-w-md mx-auto bg-base-100 shadow-2xl rounded-box p-8 mt-10">
+    <h2 class="text-3xl font-bold mb-6 text-center">Iniciar Sesión</h2>
+    {{if .Data}}
+    {{if .Data.Error}}
+    <div class="alert alert-error mb-4">
+        <span>{{.Data.Error}}</span>
+    </div>
+    {{end}}
+    {{end}}
+    <form action="/login" method="POST" class="space-y-4">
+        <div class="form-control">
+            <label class="label"><span class="label-text">Email</span></label>
+            <input type="email" name="email" required class="input input-bordered" />
+        </div>
+        <div class="form-control">
+            <label class="label"><span class="label-text">Contraseña</span></label>
+            <input type="password" name="password" required class="input input-bordered" />
+        </div>
+        <button type="submit" class="btn btn-primary w-full">Ingresar</button>
+    </form>
+    <div class="text-center mt-4">
+        <a href="/register" class="link link-primary">¿No tienes cuenta? Regístrate</a>
+    </div>
+</div>
+{{end}}
