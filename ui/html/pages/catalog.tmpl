@@ -1,0 +1,72 @@
+{{define "main"}}
+<div class="flex justify-between items-center mb-8">
+    <div>
+        <h1 class="text-4xl font-extrabold tracking-tight">Catálogo de Libros</h1>
+        <p class="text-sm opacity-70 mt-2">Explora y gestiona toda tu colección literaria.</p>
+    </div>
+    <!-- Modal Toogle -->
+    <label for="add-book-modal" class="btn btn-secondary shadow-lg hover:scale-105 transition-transform">+ Nuevo Libro</label>
+</div>
+
+<div class="bg-base-100 shadow-2xl rounded-box overflow-hidden border border-base-200">
+  <div class="overflow-x-auto">
+    <table class="table table-zebra w-full">
+      <thead class="bg-base-200 text-base-content text-sm">
+        <tr>
+          <th class="w-16">ID</th>
+          <th>Título</th>
+          <th>Autor</th>
+          <th>Año</th>
+          <th>ISBN</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .}}
+        <tr class="hover">
+          <td class="font-mono text-xs opacity-50">{{.ID}}</td>
+          <td class="font-bold">{{.Title}}</td>
+          <td>{{.Author}}</td>
+          <td><div class="badge badge-outline">{{.PublishedYear}}</div></td>
+          <td class="font-mono text-sm">{{.ISBN}}</td>
+        </tr>
+        {{else}}
+        <tr><td colspan="5" class="text-center py-10 opacity-50 italic">No hay libros registrados aún.</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal para agregar -->
+<input type="checkbox" id="add-book-modal" class="modal-toggle" />
+<div class="modal modal-bottom sm:modal-middle">
+  <div class="modal-box bg-base-100 shadow-2xl border border-primary/20">
+    <h3 class="font-bold text-2xl mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">Agregar Nuevo Libro</h3>
+    <form action="/books" method="POST" class="space-y-4">
+      <div class="form-control">
+        <label class="label"><span class="label-text font-semibold">Título</span></label>
+        <input type="text" name="title" required class="input input-bordered input-primary w-full focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="Ej. El Señor de los Anillos" />
+      </div>
+      <div class="form-control">
+        <label class="label"><span class="label-text font-semibold">Autor</span></label>
+        <input type="text" name="author" required class="input input-bordered input-primary w-full focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="Ej. J.R.R. Tolkien" />
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+          <div class="form-control">
+            <label class="label"><span class="label-text font-semibold">Año</span></label>
+            <input type="number" name="published_year" required class="input input-bordered input-primary w-full focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="Ej. 1954" />
+          </div>
+          <div class="form-control">
+            <label class="label"><span class="label-text font-semibold">ISBN</span></label>
+            <input type="text" name="isbn" required class="input input-bordered input-primary w-full focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="ISBN-13" />
+          </div>
+      </div>
+      <div class="modal-action mt-6">
+        <label for="add-book-modal" class="btn btn-ghost">Cancelar</label>
+        <button type="submit" class="btn btn-primary px-8">Guardar</button>
+      </div>
+    </form>
+  </div>
+  <label class="modal-backdrop" for="add-book-modal">Cerrar</label>
+</div>
+{{end}}
