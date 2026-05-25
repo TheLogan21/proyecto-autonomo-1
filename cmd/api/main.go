@@ -28,13 +28,27 @@ func main() {
 		port = "8080"
 	}
 
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		log.Fatal("DATABASE_URL no está definida")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbUser := os.Getenv("DB_USER")
+	dbPass := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	dbSSL := os.Getenv("DB_SSLMODE")
+
+	if dbHost == "" {
+		dbHost = "localhost"
+	}
+	if dbPort == "" {
+		dbPort = "5432"
+	}
+	if dbSSL == "" {
+		dbSSL = "disable"
 	}
 
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", dbUser, dbPass, dbHost, dbPort, dbName, dbSSL)
+
 	ctx := context.Background()
-	dbPool, err := pgxpool.New(ctx, dbURL)
+	dbPool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		log.Fatalf("No se pudo conectar a la base de datos: %v", err)
 	}
