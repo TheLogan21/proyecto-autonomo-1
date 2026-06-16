@@ -61,5 +61,8 @@ func (r *UserRepository) GetByID(ctx context.Context, id int) (*models.User, err
 func (r *UserRepository) UpdateBalance(ctx context.Context, id int, newBalance float64) error {
 	query := `UPDATE users SET balance = $1 WHERE id = $2`
 	_, err := r.db.Exec(ctx, query, newBalance, id)
-	return err
+	if err != nil {
+		return fmt.Errorf("error updating user balance: %w", err)
+	}
+	return nil
 }

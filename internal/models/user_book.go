@@ -7,6 +7,6 @@ type UserBook struct {
 	BookID        int       `json:"bookId"`
 	DownloadCount int       `json:"downloadCount"`
 	PurchasedAt   time.Time `json:"purchasedAt"`
-	// Relación para mostrar detalles del libro en el perfil
+	// Detalle del libro relacionado
 	Book *Book `json:"book,omitempty"`
 }

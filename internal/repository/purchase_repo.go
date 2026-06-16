@@ -21,7 +21,10 @@ func NewPurchaseRepository(db *pgxpool.Pool) *PurchaseRepository {
 func (r *PurchaseRepository) CreatePurchase(ctx context.Context, userID, bookID int) error {
 	query := `INSERT INTO user_books (user_id, book_id) VALUES ($1, $2)`
 	_, err := r.db.Exec(ctx, query, userID, bookID)
-	return err
+	if err != nil {
+		return fmt.Errorf("error creating purchase record: %w", err)
+	}
+	return nil
 }
 
 func (r *PurchaseRepository) HasPurchased(ctx context.Context, userID, bookID int) (bool, error) {
@@ -32,7 +35,7 @@ func (r *PurchaseRepository) HasPurchased(ctx context.Context, userID, bookID in
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
 		}
-		return false, err
+		return false, fmt.Errorf("error checking purchase record: %w", err)
 	}
 	return true, nil
 }
@@ -40,7 +43,10 @@ func (r *PurchaseRepository) HasPurchased(ctx context.Context, userID, bookID in
 func (r *PurchaseRepository) IncrementDownload(ctx context.Context, userID, bookID int) error {
 	query := `UPDATE user_books SET download_count = download_count + 1 WHERE user_id = $1 AND book_id = $2`
 	_, err := r.db.Exec(ctx, query, userID, bookID)
-	return err
+	if err != nil {
+		return fmt.Errorf("error incrementing download count: %w", err)
+	}
+	return nil
 }
 
 func (r *PurchaseRepository) GetUserPurchases(ctx context.Context, userID int) ([]models.UserBook, error) {

@@ -3,18 +3,21 @@ package services
 import (
 	"context"
 	"ebook-system/internal/models"
-	"ebook-system/internal/repository"
 	"errors"
+	"fmt"
 )
 
+// BookService gestiona las operaciones de libros
 type BookService struct {
-	repo *repository.BookRepository
+	repo BookRepository
 }
 
-func NewBookService(repo *repository.BookRepository) *BookService {
+// NewBookService crea un BookService
+func NewBookService(repo BookRepository) *BookService {
 	return &BookService{repo: repo}
 }
 
+// AddBook registra un nuevo libro
 func (s *BookService) AddBook(ctx context.Context, book *models.Book) error {
 	if book.Title == "" || book.Author == "" {
 		return errors.New("título y autor son obligatorios")
@@ -26,13 +29,28 @@ func (s *BookService) AddBook(ctx context.Context, book *models.Book) error {
 		return errors.New("el precio no puede ser negativo")
 	}
 
-	return s.repo.Create(ctx, book)
+	err := s.repo.Create(ctx, book)
+	if err != nil {
+		return fmt.Errorf("error al agregar libro en el repositorio: %w", err)
+	}
+	return nil
 }
 
+// ListBooks obtiene la lista de libros
 func (s *BookService) ListBooks(ctx context.Context) ([]models.Book, error) {
-	return s.repo.GetAll(ctx)
+	books, err := s.repo.GetAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error al listar libros del repositorio: %w", err)
+	}
+	return books, nil
 }
 
+// GetBookByID obtiene un libro por ID
 func (s *BookService) GetBookByID(ctx context.Context, id int) (*models.Book, error) {
-	return s.repo.GetByID(ctx, id)
+	book, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("error al obtener libro por ID %d del repositorio: %w", id, err)
+	}
+	return book, nil
 }
+
