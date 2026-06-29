@@ -66,6 +66,20 @@ func RequireAuth(next http.Handler) http.Handler {
 	})
 }
 
+func RequireAuthJSON(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userID := GetUserID(r.Context())
+		if userID == 0 {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte(`{"error":"No autorizado"}`))
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+
 func GetUserID(ctx context.Context) int {
 	if val, ok := ctx.Value(UserIDKey).(int); ok {
 		return val

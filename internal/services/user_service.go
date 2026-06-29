@@ -9,18 +9,18 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// UserService gestiona usuarios
-type UserService struct {
+// userService gestiona usuarios
+type userService struct {
 	repo UserRepository
 }
 
 // NewUserService crea un UserService
-func NewUserService(repo UserRepository) *UserService {
-	return &UserService{repo: repo}
+func NewUserService(repo UserRepository) UserService {
+	return &userService{repo: repo}
 }
 
 // Register registra un nuevo usuario
-func (s *UserService) Register(ctx context.Context, username, email, password string) error {
+func (s *userService) Register(ctx context.Context, username, email, password string) error {
 	if username == "" || email == "" || password == "" {
 		return errors.New("todos los campos son requeridos")
 	}
@@ -52,7 +52,7 @@ func (s *UserService) Register(ctx context.Context, username, email, password st
 }
 
 // Login valida las credenciales de un usuario
-func (s *UserService) Login(ctx context.Context, email, password string) (*models.User, error) {
+func (s *userService) Login(ctx context.Context, email, password string) (*models.User, error) {
 	user, err := s.repo.GetByEmail(ctx, email)
 	if err != nil {
 		return nil, fmt.Errorf("error al obtener usuario para login: %w", err)
@@ -70,7 +70,7 @@ func (s *UserService) Login(ctx context.Context, email, password string) (*model
 }
 
 // AddBalance añade saldo a un usuario
-func (s *UserService) AddBalance(ctx context.Context, userID int, amount float64) error {
+func (s *userService) AddBalance(ctx context.Context, userID int, amount float64) error {
 	if amount <= 0 {
 		return errors.New("la cantidad debe ser mayor a cero")
 	}
@@ -92,11 +92,12 @@ func (s *UserService) AddBalance(ctx context.Context, userID int, amount float64
 }
 
 // GetUserByID obtiene un usuario por ID
-func (s *UserService) GetUserByID(ctx context.Context, id int) (*models.User, error) {
+func (s *userService) GetUserByID(ctx context.Context, id int) (*models.User, error) {
 	user, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("error al obtener usuario por ID %d del repositorio: %w", id, err)
 	}
 	return user, nil
 }
+
 

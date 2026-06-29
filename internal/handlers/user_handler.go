@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -10,11 +11,11 @@ import (
 )
 
 type UserHandler struct {
-	userService     *services.UserService
-	purchaseService *services.PurchaseService
+	userService     services.UserService
+	purchaseService services.PurchaseService
 }
 
-func NewUserHandler(us *services.UserService, ps *services.PurchaseService) *UserHandler {
+func NewUserHandler(us services.UserService, ps services.PurchaseService) *UserHandler {
 	return &UserHandler{userService: us, purchaseService: ps}
 }
 
@@ -64,3 +65,66 @@ func (h *UserHandler) AddBalance(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, "/profile", http.StatusSeeOther)
 }
+
+func (h *UserHandler) ProfileJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	userID := middleware.GetUserID(r.Context())
+
+	user, err := h.userService.GetUserByID(r.Context(), userID)
+	if err != nil || user == nil {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Usuario no encontrado"})
+		return
+	}
+
+	purchases, err := h.purchaseService.GetUserPurchases(r.Context(), userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Error al obtener compras"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"user":      user,
+		"purchases": purchases,
+	})
+}
+
+func (h *UserHandler) BalanceJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Método no permitido"})
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+
+	var req struct {
+		Amount float64 `json:"amount"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Cuerpo JSON inválido o malformado"})
+		return
+	}
+
+	if req.Amount <= 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "La cantidad debe ser mayor a cero"})
+		return
+	}
+
+	err := h.userService.AddBalance(r.Context(), userID, req.Amount)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Saldo actualizado exitosamente"})
+}
+

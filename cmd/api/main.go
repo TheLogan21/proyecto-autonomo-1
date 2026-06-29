@@ -73,6 +73,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(localMiddleware.AuthMiddleware)
 
+	// Rutas HTML / SSR
 	r.Get("/", bookHandler.Home)
 	r.Get("/catalog", bookHandler.Catalog)
 
@@ -91,6 +92,26 @@ func main() {
 		r.Post("/books/{id}/buy", purchaseHandler.BuyBook)
 		r.Get("/books/{id}/download", purchaseHandler.DownloadBook)
 	})
+
+	// Rutas API v1 JSON
+	r.Route("/api/v1", func(r chi.Router) {
+		// Servicios Públicos
+		r.Post("/auth/register", authHandler.RegisterJSON) // 1
+		r.Post("/auth/login", authHandler.LoginJSON)       // 2
+		r.Get("/books", bookHandler.ListBooksJSON)         // 3
+
+		// Servicios Privados (Requieren Autenticación)
+		r.Group(func(r chi.Router) {
+			r.Use(localMiddleware.RequireAuthJSON)
+
+			r.Post("/auth/logout", authHandler.LogoutJSON)       // 4
+			r.Post("/books", bookHandler.CreateBookJSON)         // 5
+			r.Get("/profile", userHandler.ProfileJSON)           // 6
+			r.Post("/profile/balance", userHandler.BalanceJSON)  // 7
+			r.Post("/books/{id}/buy", purchaseHandler.BuyJSON)   // 8
+		})
+	})
+
 
 	addr := fmt.Sprintf(":%s", port)
 	log.Printf("Servidor escuchando en http://localhost%s", addr)

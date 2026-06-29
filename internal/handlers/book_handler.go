@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -10,10 +11,10 @@ import (
 )
 
 type BookHandler struct {
-	service *services.BookService
+	service services.BookService
 }
 
-func NewBookHandler(service *services.BookService) *BookHandler {
+func NewBookHandler(service services.BookService) *BookHandler {
 	return &BookHandler{service: service}
 }
 
@@ -61,3 +62,43 @@ func (h *BookHandler) CreateBook(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, "/catalog", http.StatusSeeOther)
 }
+
+func (h *BookHandler) ListBooksJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	books, err := h.service.ListBooks(r.Context())
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Error al obtener libros"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(books)
+}
+
+func (h *BookHandler) CreateBookJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Método no permitido"})
+		return
+	}
+
+	var book models.Book
+	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Cuerpo JSON inválido o malformado"})
+		return
+	}
+
+	err := h.service.AddBook(r.Context(), &book)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(book)
+}
+
