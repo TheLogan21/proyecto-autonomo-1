@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"net/http"
 	"sync"
 )
@@ -87,7 +88,7 @@ func RequireAuthJSON(next http.Handler) http.Handler {
 		if userID == 0 {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte(`{"error":"No autorizado"}`))
+			json.NewEncoder(w).Encode(map[string]string{"error": "No autorizado"})
 			return
 		}
 		next.ServeHTTP(w, r)

@@ -27,7 +27,7 @@ func (h *PurchaseHandler) BuyBook(w http.ResponseWriter, r *http.Request) {
 
 	userID := middleware.GetUserID(r.Context())
 	bookID, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
+	if err != nil || bookID <= 0 {
 		http.Redirect(w, r, "/catalog?error="+url.QueryEscape("ID inválido"), http.StatusSeeOther)
 		return
 	}
@@ -44,7 +44,7 @@ func (h *PurchaseHandler) BuyBook(w http.ResponseWriter, r *http.Request) {
 func (h *PurchaseHandler) DownloadBook(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 	bookID, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
+	if err != nil || bookID <= 0 {
 		http.Redirect(w, r, "/profile?error="+url.QueryEscape("ID inválido"), http.StatusSeeOther)
 		return
 	}
@@ -73,18 +73,18 @@ func (h *PurchaseHandler) BuyJSON(w http.ResponseWriter, r *http.Request) {
 	// Obtener ID del usuario comprador desde el contexto de sesión
 	userID := middleware.GetUserID(r.Context())
 	
-	// Convertir el parámetro ID del libro a entero
+	// Convertir el parámetro ID del libro a entero y validar rango
 	bookID, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
+	if err != nil || bookID <= 0 {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "ID de libro inválido"})
+		json.NewEncoder(w).Encode(map[string]string{"error": "ID de libro inválido o fuera de rango"})
 		return
 	}
 
 	// Ejecutar la compra validando balance y previniendo compras duplicadas
 	err = h.purchaseService.BuyBook(r.Context(), userID, bookID)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
@@ -92,5 +92,6 @@ func (h *PurchaseHandler) BuyJSON(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Libro comprado exitosamente"})
 }
+
 
 
