@@ -65,6 +65,8 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+// RegisterJSON procesa el registro de un nuevo usuario desde la API.
+// Valida los datos requeridos y guarda el usuario mediante la interfaz del servicio.
 func (h *AuthHandler) RegisterJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodPost {
@@ -79,12 +81,21 @@ func (h *AuthHandler) RegisterJSON(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 
+	// Decodificar el JSON de entrada
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Cuerpo JSON inválido o malformado"})
 		return
 	}
 
+	// Validación técnica defensiva de campos obligatorios
+	if req.Username == "" || req.Email == "" || req.Password == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Todos los campos son requeridos"})
+		return
+	}
+
+	// Invocar lógica de negocio en el servicio
 	err := h.userService.Register(r.Context(), req.Username, req.Email, req.Password)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -96,6 +107,8 @@ func (h *AuthHandler) RegisterJSON(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Usuario registrado exitosamente"})
 }
 
+// LoginJSON valida las credenciales y genera un token de sesión.
+// Soporta el retorno del token en la cabecera/JSON y la cookie para vistas tradicionales.
 func (h *AuthHandler) LoginJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodPost {
@@ -109,12 +122,21 @@ func (h *AuthHandler) LoginJSON(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 
+	// Decodificar JSON de credenciales
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Cuerpo JSON inválido o malformado"})
 		return
 	}
 
+	// Validación técnica defensiva
+	if req.Email == "" || req.Password == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Email y contraseña obligatorios"})
+		return
+	}
+
+	// Autenticar usuario con el servicio
 	user, err := h.userService.Login(r.Context(), req.Email, req.Password)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -122,6 +144,7 @@ func (h *AuthHandler) LoginJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Crear sesión y cookie correspondientes
 	token := middleware.CreateSession(user.ID)
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
@@ -136,6 +159,7 @@ func (h *AuthHandler) LoginJSON(w http.ResponseWriter, r *http.Request) {
 		"user":  user,
 	})
 }
+
 
 func (h *AuthHandler) LogoutJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

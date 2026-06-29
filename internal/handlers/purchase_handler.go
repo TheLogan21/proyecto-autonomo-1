@@ -60,6 +60,8 @@ func (h *PurchaseHandler) DownloadBook(w http.ResponseWriter, r *http.Request) {
 	w.Write(content)
 }
 
+// BuyJSON procesa la compra de un e-book devolviendo el estado en formato JSON.
+// Valida la sesión activa, los fondos del usuario y gestiona la prevención de doble compra.
 func (h *PurchaseHandler) BuyJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != http.MethodPost {
@@ -68,7 +70,10 @@ func (h *PurchaseHandler) BuyJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Obtener ID del usuario comprador desde el contexto de sesión
 	userID := middleware.GetUserID(r.Context())
+	
+	// Convertir el parámetro ID del libro a entero
 	bookID, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -76,6 +81,7 @@ func (h *PurchaseHandler) BuyJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Ejecutar la compra validando balance y previniendo compras duplicadas
 	err = h.purchaseService.BuyBook(r.Context(), userID, bookID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -86,4 +92,5 @@ func (h *PurchaseHandler) BuyJSON(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Libro comprado exitosamente"})
 }
+
 

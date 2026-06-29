@@ -35,14 +35,28 @@ func DestroySession(token string) {
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("session")
-		if err != nil {
+		var token string
+
+		// 1. Intentar extraer desde la Cookie (vistas HTML)
+		if cookie, err := r.Cookie("session"); err == nil {
+			token = cookie.Value
+		}
+
+		// 2. Si no hay cookie, intentar extraer desde el Header Authorization (Servicios Web API)
+		if token == "" {
+			authHeader := r.Header.Get("Authorization")
+			if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				token = authHeader[7:]
+			}
+		}
+
+		if token == "" {
 			next.ServeHTTP(w, r)
 			return
 		}
 
 		mu.RLock()
-		userID, exists := sessions[cookie.Value]
+		userID, exists := sessions[token]
 		mu.RUnlock()
 
 		if !exists {
@@ -54,6 +68,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
 
 func RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
