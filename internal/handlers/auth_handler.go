@@ -161,11 +161,28 @@ func (h *AuthHandler) LoginJSON(w http.ResponseWriter, r *http.Request) {
 }
 
 
+// LogoutJSON invalida de forma segura la sesión del usuario.
+// Extrae el identificador único de sesión de manera híbrida (contexto/Bearer o cookie)
+// garantizando la eliminación atómica del token en el estado del servidor.
 func (h *AuthHandler) LogoutJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	if cookie, err := r.Cookie("session"); err == nil {
-		middleware.DestroySession(cookie.Value)
+
+	// 1. Intentar obtener el token resuelto por el middleware desde el contexto
+	token := middleware.GetToken(r.Context())
+
+	// 2. Fallback de contingencia: leer desde la cookie si el cliente es web tradicional
+	if token == "" {
+		if cookie, err := r.Cookie("session"); err == nil {
+			token = cookie.Value
+		}
 	}
+
+	// 3. Si se identificó el token por cualquiera de las vías, destruirlo físicamente de la memoria
+	if token != "" {
+		middleware.DestroySession(token)
+	}
+
+	// Forzar la expiración de la cookie en el cliente (si existe)
 	http.SetCookie(w, &http.Cookie{
 		Name:   "session",
 		Value:  "",
@@ -176,4 +193,5 @@ func (h *AuthHandler) LogoutJSON(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Sesión cerrada exitosamente"})
 }
+
 

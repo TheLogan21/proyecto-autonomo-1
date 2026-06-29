@@ -11,7 +11,10 @@ import (
 
 type contextKey string
 
-const UserIDKey contextKey = "userID"
+const (
+	UserIDKey contextKey = "userID"
+	TokenKey  contextKey = "token" // Nueva clave para rastrear el token activo
+)
 
 var (
 	sessions = make(map[string]int)
@@ -65,9 +68,19 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
+		// Almacenar tanto el ID de usuario como el token original en el contexto
 		ctx := context.WithValue(r.Context(), UserIDKey, userID)
+		ctx = context.WithValue(ctx, TokenKey, token)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+// GetToken recupera el token del contexto de la petición
+func GetToken(ctx context.Context) string {
+	if val, ok := ctx.Value(TokenKey).(string); ok {
+		return val
+	}
+	return ""
 }
 
 
