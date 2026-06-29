@@ -162,7 +162,7 @@ func (h *AuthHandler) LoginJSON(w http.ResponseWriter, r *http.Request) {
 
 
 // LogoutJSON invalida de forma segura la sesión del usuario.
-// Extrae el identificador único de sesión de manera híbrida (contexto/Bearer o cookie)
+// Extrae el identificador único de sesión de manera híbrida
 // garantizando la eliminación atómica del token en el estado del servidor.
 func (h *AuthHandler) LogoutJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

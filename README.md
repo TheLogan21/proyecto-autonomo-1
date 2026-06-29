@@ -29,6 +29,41 @@ El proyecto se divide en cuatro módulos principales:
 
 ---
 
+## Documentación de las Funciones Principales (Capa de Servicios)
+
+La lógica de negocio del sistema está organizada en tres servicios principales dentro de la capa `internal/services`. A continuación se detallan sus funciones y responsabilidades:
+
+### 1. Servicio de Usuarios ([user_service.go](internal/services/user_service.go))
+
+Este servicio gestiona el registro, autenticación y finanzas de los usuarios:
+
+*   **`Register(ctx, username, email, password)`**: Registra a un nuevo usuario en el sistema. Valida que todos los campos estén llenos, verifica que el correo electrónico no esté duplicado en la base de datos y encripta de forma segura la contraseña usando **Bcrypt** antes de almacenarla.
+*   **`Login(ctx, email, password)`**: Autentica al usuario en el sistema. Busca al usuario por su correo electrónico y compara la contraseña ingresada con el hash de contraseña almacenado usando la verificación de Bcrypt.
+*   **`AddBalance(ctx, userID, amount)`**: Permite recargar el monedero digital del usuario. Verifica que el monto a recargar sea mayor a cero e incrementa el saldo total.
+*   **`GetUserByID(ctx, id)`**: Obtiene toda la información de perfil de un usuario específico a partir de su identificador único.
+
+### 2. Servicio de Libros ([book_service.go](internal/services/book_service.go))
+
+Este servicio controla el catálogo de libros electrónicos:
+
+*   **`AddBook(ctx, book)`**: Registra un nuevo libro electrónico en el catálogo general. Implementa validaciones estrictas: el título y autor no pueden estar vacíos, el año de publicación debe ser válido (mayor a cero) y el precio de venta no puede ser negativo.
+*   **`ListBooks(ctx)`**: Recupera y lista todos los libros disponibles en el catálogo de la tienda para su visualización.
+*   **`GetBookByID(ctx, id)`**: Busca y recupera la información detallada de un libro en particular utilizando su ID.
+
+### 3. Servicio de Compras ([purchase_service.go](internal/services/purchase_service.go))
+
+Este servicio administra las transacciones financieras y la entrega del material digital:
+
+*   **`BuyBook(ctx, userID, bookID)`**: Procesa de forma segura la compra de un libro electrónico por parte de un usuario.
+    1.  Verifica que el usuario no posea el libro previamente para evitar compras duplicadas.
+    2.  Comprueba la existencia del libro y del usuario en el sistema.
+    3.  Valida si el saldo del usuario es suficiente para cubrir el precio del libro.
+    4.  Descuenta el saldo del usuario y registra la transacción de compra de forma persistente. *Si ocurre un error en el registro de la compra, se revierte el descuento del saldo.*
+*   **`GetUserPurchases(ctx, userID)`**: Lista detalladamente todos los libros electrónicos que han sido adquiridos exitosamente por un usuario en particular.
+*   **`DownloadBook(ctx, userID, bookID)`**: Permite al usuario descargar el contenido del libro. Verifica rigurosamente que el usuario haya comprado previamente el libro e incrementa el contador de descargas asociado a esa adquisición antes de entregar los datos.
+
+---
+
 ## Tecnologías y Paquetes Utilizados
 
 El sistema está construido sobre las siguientes tecnologías y librerías externas:
